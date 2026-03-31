@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>飲み会 席順シャッフル</title>
+<style>
+:root {
+  --bg: #f7f6f2;
+  --card: #ffffff;
+  --border: #e4e2db;
+  --border2: #d0cec5;
+  --text: #1c1b18;
+  --text2: #6b6960;
+  --text3: #a09e96;
+  --accent: #3d35a8;
+  --accent-bg: #eeedfb;
+  --accent-light: #f4f3fd;
+  --green: #1a6e40;
+  --green-bg: #edf9f3;
+  --orange: #9a5a00;
+  --orange-bg: #fff4e0;
+  --red: #a02020;
+  --red-bg: #fff0f0;
+  --mode-basic: #3d35a8;    --mode-basic-bg: #eeedfb;
+  --mode-farewell: #b04510; --mode-farewell-bg: #fef0e8;
+  --mode-welcome: #1a6e40;  --mode-welcome-bg: #edf9f3;
+  --role-director: #7b1fa2;   --role-director-bg: #f3e5f5;
+  --role-roomchief: #ad1457;  --role-roomchief-bg: #fce4ec;
+  --role-manager: #1565c0;    --role-manager-bg: #e3f2fd;
+  --role-chief: #00695c;      --role-chief-bg: #e0f2f1;
+  --role-staff: #546e7a;      --role-staff-bg: #eceff1;
+  --role-star: #b04510;       --role-star-bg: #fef0e8;
+  --role-new: #1a6e40;        --role-new-bg: #edf9f3;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',-apple-system,sans-serif;background:var(--bg);min-height:100vh;color:var(--text);padding:0 0 80px;display:flex;justify-content:center;-webkit-text-size-adjust:100%}
+.container{width:100%;max-width:680px;padding:1rem 1rem 0}
+
+/* ---- ヘッダー ---- */
+.app-header{margin-bottom:1rem;padding-top:.5rem}
+.app-title{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:2px}
+.app-sub{font-size:12px;color:var(--text3)}
+
+/* ---- カード ---- */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1rem;margin-bottom:1rem}
+
+/* ---- タブ → ボトムナビ ---- */
+.tabs{display:none} /* PCタブ非表示 */
+.panel{display:none}.panel.active{display:block}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;z-index:300;padding-bottom:env(safe-area-inset-bottom)}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;border:none;background:transparent;color:var(--text3);font-size:10px;font-weight:500;font-family:inherit;cursor:pointer;transition:color .15s;min-height:56px;-webkit-tap-highlight-color:transparent}
+.bnav-item svg{flex-shrink:0}
+.bnav-item.active{color:var(--accent)}
+.bnav-item.active svg{stroke:var(--accent)}
+.bnav-badge{display:none;width:6px;height:6px;border-radius:50%;background:var(--accent);position:absolute;top:6px;right:calc(50% - 14px)}
+.bnav-item.has-badge .bnav-badge{display:block}
+
+/* ---- セクションラベル ---- */
+.slabel{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}
+
+/* ---- inputs（タップしやすいサイズ） ---- */
+input[type=text],input[type=search],input[type=email]{height:44px;padding:0 12px;border:1px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;background:#fafaf8;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+input[type=text]:focus,input[type=search]:focus,input[type=email]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(61,53,168,.08);background:#fff}
+input[type=number]{height:44px;padding:0 8px;border:1px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;text-align:center;background:#fafaf8;color:var(--text);outline:none;-webkit-appearance:none}
+input[type=number]:focus{border-color:var(--accent)}
+select.role-sel{height:44px;padding:0 8px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;background:#fafaf8;color:var(--text);outline:none;cursor:pointer;flex-shrink:0;-webkit-appearance:none}
+select.role-sel:focus{border-color:var(--accent)}
+
+/* ---- ボタン類 ---- */
+.del-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--text3);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.del-btn:active{background:var(--red-bg);color:var(--red)}
+.add-btn{display:flex;align-items:center;gap:6px;height:44px;padding:0 14px;border:1.5px dashed var(--border2);border-radius:10px;background:transparent;color:var(--text3);font-size:14px;font-family:inherit;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.add-btn:active{background:var(--accent-light);color:var(--accent)}
+.icon-btn{display:inline-flex;align-items:center;gap:5px;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:9px;background:#fff;color:var(--text2);font-size:13px;font-family:inherit;cursor:pointer;transition:all .15s;font-weight:500;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.icon-btn:active{background:var(--bg)}
+.icon-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.icon-btn.primary:active{opacity:.82}
+.icon-btn.danger{color:var(--red)}
+.icon-btn.danger:active{background:var(--red-bg)}
+
+/* ---- role badge ---- */
+.role-badge{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;font-size:11px;font-weight:700;white-space:nowrap}
+
+/* ---- テーブル設定行 ---- */
+.table-config-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.table-row{display:flex;align-items:center;gap:8px}
+.row-label{font-size:14px;color:var(--text2)}
+
+/* ---- toggle group ---- */
+.toggle-group{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.toggle-btn{height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text2);font-size:13px;font-family:inherit;cursor:pointer;font-weight:500;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.toggle-btn:active{background:var(--bg)}
+.toggle-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+
+/* ---- mode cards ---- */
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.mode-card{border:1.5px solid var(--border);border-radius:12px;padding:14px 8px;cursor:pointer;transition:all .15s;background:#fff;text-align:center;-webkit-tap-highlight-color:transparent}
+.mode-card:active{opacity:.85}
+.mode-card.active-basic   {border-color:var(--mode-basic);  background:var(--mode-basic-bg)}
+.mode-card.active-farewell{border-color:var(--mode-farewell);background:var(--mode-farewell-bg)}
+.mode-card.active-welcome {border-color:var(--mode-welcome); background:var(--mode-welcome-bg)}
+.mode-icon{font-size:24px;margin-bottom:5px}
+.mode-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.mode-card.active-basic    .mode-name{color:var(--mode-basic)}
+.mode-card.active-farewell .mode-name{color:var(--mode-farewell)}
+.mode-card.active-welcome  .mode-name{color:var(--mode-welcome)}
+.mode-desc{font-size:10px;color:var(--text3);line-height:1.4}
+.mode-option-box{margin-top:10px;padding:12px;background:var(--bg);border-radius:10px}
+.mode-option-label{font-size:12px;color:var(--text3);margin-bottom:8px;font-weight:600}
+
+/* ---- info / status ---- */
+.info-bar{font-size:13px;padding:10px 14px;border-radius:10px;margin-top:10px;line-height:1.5}
+.info-ok  {color:var(--green); background:var(--green-bg)}
+.info-warn{color:var(--orange);background:var(--orange-bg)}
+.info-err {color:var(--red);   background:var(--red-bg)}
+
+/* ---- シャッフルボタン ---- */
+.shuffle-btn{width:100%;height:54px;margin-top:14px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:17px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent}
+.shuffle-btn.mode-farewell-btn{background:var(--mode-farewell)}
+.shuffle-btn.mode-welcome-btn {background:var(--mode-welcome)}
+.shuffle-btn:active{transform:scale(.97);opacity:.9}
+
+/* ---- メンバー管理 ---- */
+.master-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.master-search{flex:1;min-width:120px}
+.master-table{width:100%;border-collapse:collapse;font-size:14px}
+.master-table th{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.05em;padding:8px 6px;border-bottom:1px solid var(--border);text-align:left;background:#fafaf8}
+.master-table td{padding:6px 6px;border-bottom:1px solid var(--border);vertical-align:middle}
+.master-table tr:last-child td{border-bottom:none}
+.master-table input[type=text],.master-table input[type=email]{width:100%;border:none;background:transparent;padding:4px 0;font-size:14px;font-family:inherit;color:var(--text);outline:none;height:auto}
+.master-table input:focus{border-bottom:1.5px solid var(--accent)}
+.master-table select{border:none;background:transparent;font-size:13px;font-family:inherit;color:var(--text);outline:none;cursor:pointer;height:auto;padding:4px 0}
+.chk{width:20px;height:20px;cursor:pointer;accent-color:var(--accent);flex-shrink:0}
+
+/* ---- 参加者ピッカー ---- */
+.picker-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.picker-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.member-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:44px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fafaf8}
+.member-chip{display:flex;align-items:center;gap:5px;padding:5px 10px 5px 12px;background:#fff;border:1px solid var(--border);border-radius:20px;font-size:13px;font-weight:500}
+.chip-remove{width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--text3);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border:none;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.chip-remove:active{background:var(--red-bg);color:var(--red)}
+.dropdown-wrap{position:relative;margin-bottom:10px}
+.dropdown-search{width:100%}
+.dropdown-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.1);z-index:100;max-height:220px;overflow-y:auto;display:none}
+.dropdown-list.open{display:block}
+.dropdown-item{display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;font-size:14px;transition:background .1s;-webkit-tap-highlight-color:transparent}
+.dropdown-item:active{background:var(--accent-light)}
+.dropdown-item.selected{opacity:.4;pointer-events:none}
+.dropdown-empty{padding:12px;font-size:13px;color:var(--text3);text-align:center}
+
+/* ---- モーダル ---- */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:flex;align-items:flex-end;justify-content:center;padding:0}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;padding:1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));width:100%;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:5px}
+.modal-sub{font-size:12px;color:var(--text3);margin-bottom:1rem;line-height:1.6}
+.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem}
+
+/* ---- RESULT ---- */
+.result-section{display:none;margin-top:1rem}
+.result-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.result-title{font-size:16px;font-weight:700}
+.result-meta{font-size:13px;color:var(--text3)}
+.mode-tag{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 10px;border-radius:12px;font-size:12px;font-weight:700;margin-left:8px}
+.mode-tag-basic   {background:var(--mode-basic-bg);   color:var(--mode-basic)}
+.mode-tag-farewell{background:var(--mode-farewell-bg);color:var(--mode-farewell)}
+.mode-tag-welcome {background:var(--mode-welcome-bg); color:var(--mode-welcome)}
+.table-blocks{display:flex;flex-direction:column;gap:10px}
+.table-block{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.table-block-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fafaf8;border-bottom:1px solid var(--border)}
+.table-block-title{font-size:14px;font-weight:700}
+.table-block-sub{font-size:12px;color:var(--text3)}
+.seats-grid{padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px}
+.seat-chip{display:flex;align-items:center;gap:6px;padding:6px 11px;background:var(--bg);border-radius:20px;font-size:13px}
+.seat-num{width:22px;height:22px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.seat-name{font-weight:600;color:var(--text)}
+.layout-section{margin-top:1rem}
+.layout-label{font-size:12px;font-weight:700;color:var(--text3);letter-spacing:.07em;margin-bottom:8px}
+.layout-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1rem;overflow-x:auto}
+svg.layout-svg{width:100%;display:block}
+
+/* ---- アニメ ---- */
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardPop{0%{opacity:0;transform:scale(.7) translateY(18px)}60%{transform:scale(1.04) translateY(-3px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@keyframes shimmer{0%,100%{opacity:1}50%{opacity:.5}}
+.confetti-piece{position:fixed;width:10px;height:10px;top:-20px;pointer-events:none;z-index:9999;border-radius:2px}
+.table-block.anim-pop{animation:cardPop .55s cubic-bezier(.34,1.56,.64,1) both}
+.result-burst{text-align:center;padding:1.2rem 0 .25rem;animation:cardPop .5s ease}
+.result-burst-icon{font-size:44px;display:block;margin-bottom:6px}
+.result-burst-txt{font-size:18px;font-weight:700;color:var(--accent)}
+#shuffleOverlay{display:none;position:fixed;inset:0;background:rgba(247,246,242,.85);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(4px)}
+#shuffleOverlay.show{display:flex}
+#shuffleOverlay .spin-icon{font-size:50px;animation:spinBounce .6s linear infinite}
+@keyframes spinBounce{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(200deg) scale(1.25)}100%{transform:rotate(360deg) scale(1)}}
+#shuffleOverlay .spin-txt{font-size:16px;font-weight:600;color:var(--accent);animation:shimmer 1s ease infinite}
+
+/* ---- PC向け調整 ---- */
+@media(min-width:600px){
+  body{padding:1.5rem 1rem 2rem}
+  .container{padding:1.5rem 1rem 0}
+  .bottom-nav{display:none}
+  .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
+  .tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text3);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;font-family:inherit;transition:color .15s;white-space:nowrap}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .modal-backdrop{align-items:center;padding:1rem}
+  .modal-box{border-radius:18px;max-width:480px}
+  input[type=text],input[type=search],input[type=email]{height:38px;font-size:14px}
+  input[type=number]{height:38px;font-size:14px}
+  select.role-sel{height:38px}
+  .del-btn{width:30px;height:30px}
+  .add-btn{height:36px;font-size:13px}
+  .shuffle-btn{height:48px;font-size:16px}
+  .icon-btn{height:32px;font-size:12px}
+}
+@media(max-width:599px){
+  .master-table th:nth-child(3){display:none}
+  .master-table td:nth-child(3){display:none}
+}
+</style>
+</head>
+<body>
+<!-- シャッフル演出オーバーレイ -->
+<div id="shuffleOverlay">
+  <div class="spin-icon">🎲</div>
+  <div class="spin-txt" id="overlayTxt">席順を決めています...</div>
+</div>
+
+<!-- スマホ用ボトムナビ -->
+<nav class="bottom-nav">
+  <button class="bnav-item active" id="bnav-attend" onclick="switchTab('attend')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    参加者
+  </button>
+  <button class="bnav-item" id="bnav-master" onclick="switchTab('master')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    メンバー
+  </button>
+  <button class="bnav-item" id="bnav-tables" onclick="switchTab('tables')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    テーブル
+  </button>
+  <button class="bnav-item" id="bnav-mode" onclick="switchTab('mode')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+    モード
+  </button>
+</nav>
+
+<div class="container">
+  <div class="app-header">
+    <div class="app-title">🍻 飲み会 席順シャッフル</div>
+    <div class="app-sub">メンバーを登録して、モードを選んで最適な席順を自動生成</div>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active"  onclick="switchTab('attend')">参加者</button>
+      <button class="tab"         onclick="switchTab('master')">メンバー管理</button>
+      <button class="tab"         onclick="switchTab('tables')">テーブル</button>
+      <button class="tab"         onclick="switchTab('mode')">モード</button>
+    </div>
+
+    <!-- ========== 参加者タブ ========== -->
+    <div id="panel-attend" class="panel active">
+      <div class="picker-header">
+        <div class="slabel" style="margin:0">今回の参加者</div>
+        <div class="picker-actions">
+          <button class="icon-btn" onclick="openCheckPicker()">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M3 6l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            一覧から選ぶ
+          </button>
+          <button class="icon-btn danger" onclick="clearAttendees()">全削除</button>
+        </div>
+      </div>
+
+      <!-- チップ表示エリア -->
+      <div class="member-chips" id="attendChips">
+        <span style="font-size:12px;color:var(--text3);align-self:center">参加者を追加してください</span>
+      </div>
+
+      <!-- ドロップダウン検索で1人ずつ追加 -->
+      <div class="slabel" style="margin-bottom:6px">ドロップダウンから追加</div>
+      <div class="dropdown-wrap">
+        <input type="search" class="dropdown-search" id="ddSearch" placeholder="名前で検索して追加..." autocomplete="off"
+          oninput="filterDropdown()" onfocus="openDropdown()" onblur="setTimeout(closeDropdown,150)">
+        <div class="dropdown-list" id="ddList"></div>
+      </div>
+
+      <!-- 一覧チェック選択モーダル風インライン -->
+      <div id="checkPickerWrap" style="display:none;margin-top:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="slabel" style="margin:0">一覧から選択</div>
+          <div style="display:flex;gap:6px">
+            <button class="icon-btn" onclick="checkAll()">全選択</button>
+            <button class="icon-btn" onclick="uncheckAll()">全解除</button>
+            <button class="icon-btn primary" onclick="applyCheck()">追加する</button>
+            <button class="icon-btn" onclick="closeCheckPicker()">閉じる</button>
+          </div>
+        </div>
+        <input type="search" id="checkSearch" placeholder="絞り込み..." style="width:100%;margin-bottom:8px" oninput="renderCheckList()">
+        <div id="checkList" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;background:#fafaf8"></div>
+      </div>
+
+      <div id="infoBar" class="info-bar info-ok" style="margin-top:10px"></div>
+    </div>
+
+    <!-- ========== メンバー管理タブ ========== -->
+    <div id="panel-master" class="panel">
+      <div class="master-toolbar">
+        <input type="search" class="master-search" id="masterSearch" placeholder="名前で絞り込み..." oninput="renderMaster()">
+        <button class="icon-btn primary" onclick="addMasterRow()">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><line x1="5.5" y1="1" x2="5.5" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="1" y1="5.5" x2="10" y2="5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          メンバー追加
+        </button>
+        <button class="icon-btn" onclick="exportMaster()">JSON書出し</button>
+        <button class="icon-btn" onclick="document.getElementById('importFile').click()">JSON読込み</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importMaster(event)">
+      </div>
+      <!-- 配布用ダウンロード -->
+      <div style="margin-bottom:12px;padding:12px;background:var(--accent-light);border:1px solid #c7c3f0;border-radius:12px">
+        <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:4px">📲 スマホ配布用ファイルを作成</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">現在登録中のメンバーをファイルに埋め込んでダウンロードします。<br>Outlookで自分宛に送信 → スマホで開いてそのまま使えます。</div>
+        <button class="icon-btn primary" onclick="downloadEmbeddedHtml()" style="height:42px;font-size:14px;width:100%;justify-content:center">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          配布用HTMLをダウンロード
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="master-table">
+          <thead>
+            <tr>
+              <th style="width:28px"></th>
+              <th>氏名</th>
+              <th>メールアドレス</th>
+              <th>役職</th>
+              <th>立場</th>
+              <th style="width:36px"></th>
+            </tr>
+          </thead>
+          <tbody id="masterBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text3)" id="masterCount"></div>
+    </div>
+
+    <!-- ========== テーブルタブ ========== -->
+    <div id="panel-tables" class="panel">
+      <div class="slabel">テーブルの形</div>
+      <div class="toggle-group" style="margin-bottom:16px">
+        <button class="toggle-btn active" id="btn-rect"  onclick="setShape('rect')">長方形テーブル</button>
+        <button class="toggle-btn"        id="btn-round" onclick="setShape('round')">丸テーブル</button>
+        <button class="toggle-btn"        id="btn-both"  onclick="setShape('both')">混在</button>
+      </div>
+      <div class="slabel">テーブル構成</div>
+      <div class="table-config-list" id="tableConfigList"></div>
+      <button class="add-btn" onclick="addTableConfig()">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><line x1="5.5" y1="1" x2="5.5" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="1" y1="5.5" x2="10" y2="5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        テーブルを追加
+      </button>
+    </div>
+
+    <!-- ========== モードタブ ========== -->
+    <div id="panel-mode" class="panel">
+      <div class="slabel">シャッフルモード</div>
+      <div class="mode-grid" style="margin-bottom:12px">
+        <div class="mode-card active-basic" id="mcard-basic" onclick="setMode('basic')">
+          <div class="mode-icon">🎲</div>
+          <div class="mode-name">親睦会</div>
+          <div class="mode-desc">役職をバランスよく各テーブルへ分散</div>
+        </div>
+        <div class="mode-card" id="mcard-farewell" onclick="setMode('farewell')">
+          <div class="mode-icon">🎁</div>
+          <div class="mode-name">送別会</div>
+          <div class="mode-desc">主役が全員と話せるよう配置</div>
+        </div>
+        <div class="mode-card" id="mcard-welcome" onclick="setMode('welcome')">
+          <div class="mode-icon">🌱</div>
+          <div class="mode-name">歓迎会</div>
+          <div class="mode-desc">新入社員＋面倒見役をセットで配置</div>
+        </div>
+      </div>
+      <div id="farewell-options" class="mode-option-box" style="display:none">
+        <div class="mode-option-label">主役の配置方法</div>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="fo-spread" onclick="setFarewellOpt('spread')">各テーブルに1人ずつ分散</button>
+          <button class="toggle-btn"        id="fo-gather" onclick="setFarewellOpt('gather')">主役同士を同じテーブルに</button>
+        </div>
+      </div>
+      <div class="slabel" style="margin-top:4px">モードの説明</div>
+      <div id="modeDescBox" style="font-size:12px;color:var(--text2);line-height:1.7;padding:10px 12px;background:var(--bg);border-radius:10px"></div>
+    </div>
+
+    <button class="shuffle-btn" id="shuffleBtn" onclick="doShuffle()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      席順をシャッフル
+    </button>
+  </div>
+
+  <!-- ========== RESULT ========== -->
+  <div id="resultSection" class="result-section">
+    <div id="resultBurst" class="result-burst" style="display:none">
+      <span class="result-burst-icon">🎉</span>
+      <div class="result-burst-txt" id="resultBurstTxt"></div>
+    </div>
+    <div class="result-header">
+      <div class="result-title">席順結果 <span id="modeTagEl"></span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="result-meta" id="resultMeta"></div>
+        <button class="icon-btn primary" onclick="openMailModal()" style="display:flex;align-items:center;gap:5px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M2 7l10 7 10-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          メールで通知
+        </button>
+      </div>
+    </div>
+    <div class="table-blocks" id="tableBlocks"></div>
+    <div class="layout-section">
+      <div class="layout-label">レイアウト図</div>
+      <div class="layout-wrap"><svg id="layoutSvg" class="layout-svg"></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== メール送信モーダル ========== -->
+<div id="mailModalBackdrop" class="modal-backdrop" style="display:none" onclick="closeMailModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;width:95vw">
+    <div class="modal-title">✉️ 席順をメールで通知</div>
+    <div class="modal-sub">各参加者に自分の席情報を送信できます。メールアドレス未登録の方は「メンバー管理」タブから追加してください。</div>
+
+    <!-- 全員まとめて送信 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="slabel" style="margin:0" id="mailListCount"></div>
+      <div style="display:flex;gap:6px">
+        <button class="icon-btn primary" onclick="sendAllMail()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M2 7l10 7 10-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          全員に一括送信
+        </button>
+        <button class="icon-btn" onclick="copyAllText()">📋 全員分をコピー</button>
+        <button class="icon-btn" onclick="closeMailModal()">閉じる</button>
+      </div>
+    </div>
+
+    <!-- 個人ごとのリスト -->
+    <div id="mailList" style="display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow-y:auto;padding:2px"></div>
+
+    <div style="margin-top:10px;padding:8px 12px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--text3);line-height:1.6">
+      💡 「全員に一括送信」はBCC一括送信です。「個別送信」は1人ずつメールアプリが開きます。メールアドレス未登録の方は送信できません。
+    </div>
+  </div>
+</div>
+
+<!-- 印刷用エリア -->
+<div id="printArea"></div>
+
+<script>
+// ===================== CONSTANTS =====================
+const ROLES = [
+  {value:'director',  label:'部長'},
+  {value:'roomchief', label:'室長'},
+  {value:'manager',   label:'課長'},
+  {value:'chief',     label:'係長'},
+  {value:'staff',     label:'一般'},
+];
+const POSITIONS = [
+  {value:'general', label:'一般'},
+  {value:'star',    label:'⭐ 主役'},
+  {value:'new',     label:'🌱 新入社員'},
+];
+const ROLE_WEIGHT = {director:4,roomchief:4,manager:3,chief:2,staff:1};
+const MODE_DESCS = {
+  basic:   '役職・立場をもとに、上位役職者が各テーブルに均等になるよう自動配分します。部長・室長などがひとつのテーブルに偏らないため、どのテーブルでも活発な交流が生まれます。',
+  farewell:'「主役」に設定した方が全員と交流できるよう配置します。主役を各テーブルに分散させるか、まとめて座らせるかを選べます。',
+  welcome: '「新入社員」に設定した方が各テーブルに配置され、隣席には必ず面倒見役（役職上位者）が座るよう調整します。',
+};
+const STORAGE_MASTER = 'nomikai_master_v1';
+const STORAGE_TABLES = 'nomikai_tables_v1';
+
+// ===================== STATE =====================
+// masterList: [{id, name, role, pos}]
+let masterList = [];
+// attendeeIds: string[] — IDs of people attending this event
+let attendeeIds = [];
+let tableConfigs = [{seats:6,count:1},{seats:4,count:1}];
+let shape = 'rect';
+let mode  = 'basic';
+let farewellOpt = 'spread';
+
+// ===================== PERSISTENCE =====================
+function saveMaster() {
+  try { localStorage.setItem(STORAGE_MASTER, JSON.stringify(masterList)); } catch(e){}
+}
+function loadMaster() {
+  try {
+    const d = localStorage.getItem(STORAGE_MASTER);
+    if(d) masterList = JSON.parse(d);
+  } catch(e){}
+  if(!masterList.length) {
+    // default sample
+    const samples = [
+      {name:'田中さん',role:'director',pos:'general',email:''},
+      {name:'鈴木さん',role:'roomchief',pos:'general',email:''},
+      {name:'佐藤さん',role:'manager',pos:'general',email:''},
+      {name:'山田さん',role:'manager',pos:'general',email:''},
+      {name:'伊藤さん',role:'chief',pos:'general',email:''},
+      {name:'渡辺さん',role:'staff',pos:'general',email:''},
+      {name:'高橋さん',role:'staff',pos:'general',email:''},
+      {name:'中村さん',role:'staff',pos:'general',email:''},
+      {name:'小林さん',role:'staff',pos:'new',email:''},
+      {name:'加藤さん',role:'staff',pos:'new',email:''},
+    ];
+    masterList = samples.map((s,i)=>({id:'m'+Date.now()+i,...s}));
+    saveMaster();
+  }
+}
+function saveTables() {
+  try { localStorage.setItem(STORAGE_TABLES, JSON.stringify({tableConfigs,shape})); } catch(e){}
+}
+function loadTables() {
+  try {
+    const d = localStorage.getItem(STORAGE_TABLES);
+    if(d){ const p=JSON.parse(d); tableConfigs=p.tableConfigs||tableConfigs; shape=p.shape||shape; }
+  } catch(e){}
+}
+
+// ===================== TAB =====================
+function switchTab(t) {
+  // PCタブ
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['attend','master','tables','mode'][i]===t));
+  // スマホボトムナビ
+  ['attend','master','tables','mode'].forEach(v=>{
+    const el=document.getElementById('bnav-'+v);
+    if(el) el.classList.toggle('active',v===t);
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  if(t==='master') renderMaster();
+  if(t==='attend') { renderAttendChips(); renderDropdown(); }
+}
+
+// ===================== MASTER MANAGEMENT =====================
+function uid(){ return 'm'+Date.now()+Math.random().toString(36).slice(2,6); }
+
+function renderMaster() {
+  const q = (document.getElementById('masterSearch').value||'').trim().toLowerCase();
+  const filtered = masterList.filter(m=>m.name.toLowerCase().includes(q));
+  const tbody = document.getElementById('masterBody');
+  tbody.innerHTML = '';
+  filtered.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" class="chk" ${attendeeIds.includes(m.id)?'checked':''} onchange="toggleAttendByMaster('${m.id}',this.checked)"></td>
+      <td><input type="text" value="${esc(m.name)}" placeholder="氏名" onchange="updateMaster('${m.id}','name',this.value)"></td>
+      <td><input type="email" value="${esc(m.email||'')}" placeholder="example@mail.com" style="width:100%;border:none;background:transparent;padding:0;font-size:12px;font-family:inherit;color:var(--text);outline:none" onchange="updateMaster('${m.id}','email',this.value)"></td>
+      <td><select class="role-sel" onchange="updateMaster('${m.id}','role',this.value)">${ROLES.map(r=>`<option value="${r.value}"${m.role===r.value?' selected':''}>${r.label}</option>`).join('')}</select></td>
+      <td><select class="role-sel" onchange="updateMaster('${m.id}','pos',this.value)">${POSITIONS.map(p=>`<option value="${p.value}"${m.pos===p.value?' selected':''}>${p.label}</option>`).join('')}</select></td>
+      <td><button class="del-btn" onclick="deleteMaster('${m.id}')">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('masterCount').textContent = `${filtered.length}名 表示 / 合計 ${masterList.length}名登録`;
+}
+
+function addMasterRow() {
+  const m = {id:uid(), name:'', role:'staff', pos:'general', email:''};
+  masterList.push(m);
+  saveMaster();
+  renderMaster();
+  // focus new row input
+  const inputs = document.querySelectorAll('#masterBody input[type=text]');
+  if(inputs.length) inputs[inputs.length-1].focus();
+}
+
+function updateMaster(id, key, val) {
+  const m = masterList.find(x=>x.id===id);
+  if(m){ m[key]=val; saveMaster(); renderDropdown(); renderAttendChips(); }
+}
+
+function deleteMaster(id) {
+  masterList = masterList.filter(x=>x.id!==id);
+  attendeeIds = attendeeIds.filter(x=>x!==id);
+  saveMaster(); renderMaster(); renderAttendChips(); updateInfo();
+}
+
+function toggleAttendByMaster(id, checked) {
+  if(checked && !attendeeIds.includes(id)) attendeeIds.push(id);
+  if(!checked) attendeeIds = attendeeIds.filter(x=>x!==id);
+  renderAttendChips(); updateInfo();
+}
+
+function exportMaster() {
+  const blob = new Blob([JSON.stringify(masterList, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'nomikai_members.json'; a.click();
+}
+
+function importMaster(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if(Array.isArray(data)) {
+        masterList = data.map(d=>({id:d.id||uid(), name:d.name||'', role:d.role||'staff', pos:d.pos||'general', email:d.email||''}));
+        saveMaster(); renderMaster(); renderDropdown(); renderAttendChips();
+      }
+    } catch(err){ alert('読み込みに失敗しました'); }
+  };
+  r.readAsText(file);
+  e.target.value='';
+}
+
+// ===================== ATTENDEE CHIPS =====================
+function renderAttendChips() {
+  const wrap = document.getElementById('attendChips');
+  wrap.innerHTML = '';
+  if(!attendeeIds.length){
+    wrap.innerHTML = '<span style="font-size:12px;color:var(--text3);align-self:center">参加者を追加してください</span>';
+    updateInfo(); return;
+  }
+  attendeeIds.forEach(id => {
+    const m = masterList.find(x=>x.id===id);
+    if(!m) return;
+    const chip = document.createElement('div'); chip.className='member-chip';
+    chip.innerHTML = `${esc(m.name)}${roleBadgeHTML(m.role,m.pos)}<button class="chip-remove" onclick="removeAttendee('${id}')">×</button>`;
+    wrap.appendChild(chip);
+  });
+  updateInfo();
+}
+
+function removeAttendee(id) {
+  attendeeIds = attendeeIds.filter(x=>x!==id);
+  renderAttendChips(); renderDropdown();
+}
+
+function clearAttendees() {
+  attendeeIds = []; renderAttendChips(); renderDropdown();
+}
+
+// ===================== DROPDOWN =====================
+function renderDropdown() {
+  const q = (document.getElementById('ddSearch').value||'').trim().toLowerCase();
+  const list = document.getElementById('ddList');
+  const available = masterList.filter(m=>
+    (!q || m.name.toLowerCase().includes(q))
+  );
+  list.innerHTML = '';
+  if(!available.length){ list.innerHTML='<div class="dropdown-empty">該当なし</div>'; return; }
+  available.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'dropdown-item' + (attendeeIds.includes(m.id)?' selected':'');
+    div.innerHTML = `${esc(m.name)} ${roleBadgeHTML(m.role,m.pos)}`;
+    div.onclick = () => addAttendee(m.id);
+    list.appendChild(div);
+  });
+}
+
+function filterDropdown(){ renderDropdown(); openDropdown(); }
+function openDropdown(){ renderDropdown(); document.getElementById('ddList').classList.add('open'); }
+function closeDropdown(){ document.getElementById('ddList').classList.remove('open'); }
+
+function addAttendee(id) {
+  if(!attendeeIds.includes(id)){ attendeeIds.push(id); }
+  document.getElementById('ddSearch').value='';
+  renderDropdown(); renderAttendChips();
+  closeDropdown();
+}
+
+// ===================== CHECK PICKER =====================
+function openCheckPicker(){ document.getElementById('checkPickerWrap').style.display='block'; renderCheckList(); }
+function closeCheckPicker(){ document.getElementById('checkPickerWrap').style.display='none'; }
+
+function renderCheckList() {
+  const q = (document.getElementById('checkSearch').value||'').trim().toLowerCase();
+  const filtered = masterList.filter(m=>!q||m.name.toLowerCase().includes(q));
+  const wrap = document.getElementById('checkList');
+  wrap.innerHTML='';
+  filtered.forEach(m=>{
+    const row = document.createElement('label');
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px';
+    row.innerHTML=`<input type="checkbox" class="chk check-item" value="${m.id}" ${attendeeIds.includes(m.id)?'checked':''}> ${esc(m.name)} ${roleBadgeHTML(m.role,m.pos)}`;
+    wrap.appendChild(row);
+  });
+}
+
+function checkAll()  { document.querySelectorAll('.check-item').forEach(c=>c.checked=true); }
+function uncheckAll(){ document.querySelectorAll('.check-item').forEach(c=>c.checked=false); }
+
+function applyCheck() {
+  const checked = [...document.querySelectorAll('.check-item:checked')].map(c=>c.value);
+  const unchecked = [...document.querySelectorAll('.check-item:not(:checked)')].map(c=>c.value);
+  checked.forEach(id=>{ if(!attendeeIds.includes(id)) attendeeIds.push(id); });
+  unchecked.forEach(id=>{ attendeeIds=attendeeIds.filter(x=>x!==id); });
+  closeCheckPicker();
+  renderAttendChips(); renderDropdown();
+}
+
+// ===================== TABLE CONFIG =====================
+function renderTableConfigs() {
+  const list = document.getElementById('tableConfigList');
+  list.innerHTML='';
+  tableConfigs.forEach((tc,i)=>{
+    const row=document.createElement('div'); row.className='table-row';
+    const ni=document.createElement('input'); ni.type='number'; ni.min=1; ni.max=30; ni.value=tc.seats; ni.style.width='54px';
+    ni.oninput=()=>{ tableConfigs[i].seats=Math.max(1,parseInt(ni.value)||1); updateInfo(); saveTables(); };
+    const l1=document.createElement('span'); l1.className='row-label'; l1.textContent='人掛け ×';
+    const ci=document.createElement('input'); ci.type='number'; ci.min=1; ci.max=20; ci.value=tc.count; ci.style.width='54px';
+    ci.oninput=()=>{ tableConfigs[i].count=Math.max(1,parseInt(ci.value)||1); updateInfo(); saveTables(); };
+    const l2=document.createElement('span'); l2.className='row-label'; l2.textContent='卓';
+    const btn=document.createElement('button'); btn.className='del-btn'; btn.textContent='×';
+    btn.onclick=()=>{ tableConfigs.splice(i,1); renderTableConfigs(); saveTables(); };
+    row.append(ni,l1,ci,l2,btn); list.appendChild(row);
+  });
+  updateInfo();
+}
+function addTableConfig(){ tableConfigs.push({seats:4,count:1}); renderTableConfigs(); saveTables(); }
+
+// ===================== SHAPE / MODE =====================
+function setShape(s){
+  shape=s; saveTables();
+  ['rect','round','both'].forEach(v=>document.getElementById('btn-'+v).classList.toggle('active',v===s));
+}
+function setMode(m){
+  mode=m;
+  ['basic','farewell','welcome'].forEach(v=>{
+    const c=document.getElementById('mcard-'+v);
+    c.className='mode-card'+(v===m?' active-'+v:'');
+  });
+  document.getElementById('farewell-options').style.display=m==='farewell'?'block':'none';
+  document.getElementById('modeDescBox').textContent=MODE_DESCS[m];
+  updateShuffleBtn();
+}
+function setFarewellOpt(o){
+  farewellOpt=o;
+  ['spread','gather'].forEach(v=>document.getElementById('fo-'+v).classList.toggle('active',v===o));
+}
+function updateShuffleBtn(){
+  const btn=document.getElementById('shuffleBtn');
+  btn.className='shuffle-btn'+(mode==='farewell'?' mode-farewell-btn':mode==='welcome'?' mode-welcome-btn':'');
+}
+
+// ===================== INFO BAR =====================
+function updateInfo(){
+  const valid=attendeeIds.filter(id=>masterList.find(m=>m.id===id&&m.name.trim()));
+  const totalSeats=tableConfigs.reduce((s,tc)=>s+tc.seats*tc.count,0);
+  const bar=document.getElementById('infoBar');
+  if(!tableConfigs.length){bar.textContent='テーブルを設定してください';bar.className='info-bar info-err';return;}
+  if(!valid.length){bar.textContent='参加者を選んでください';bar.className='info-bar info-err';return;}
+  const diff=totalSeats-valid.length;
+  if(diff<0){bar.textContent=`参加者 ${valid.length}名 / 席数 ${totalSeats}席 — 席が ${Math.abs(diff)}席 不足`;bar.className='info-bar info-err';}
+  else if(diff>0){bar.textContent=`参加者 ${valid.length}名 / 席数 ${totalSeats}席 — ${diff}席 空きあり`;bar.className='info-bar info-warn';}
+  else{bar.textContent=`参加者 ${valid.length}名 / 席数 ${totalSeats}席 — ちょうどです ✓`;bar.className='info-bar info-ok';}
+}
+
+// ===================== SHUFFLE =====================
+function shuffleArr(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function doShuffle(){
+  const people = attendeeIds
+    .map(id=>masterList.find(m=>m.id===id))
+    .filter(m=>m&&m.name.trim())
+    .map((m,i)=>({...m,idx:i}));
+  const totalSeats=tableConfigs.reduce((s,tc)=>s+tc.seats*tc.count,0);
+  if(!people.length){alert('参加者を選んでください');return;}
+  if(!tableConfigs.length){alert('テーブルを設定してください');return;}
+  if(people.length>totalSeats){alert(`席が不足しています（${people.length-totalSeats}席足りません）`);return;}
+
+  // シャッフル演出
+  const overlay=document.getElementById('shuffleOverlay');
+  const overlayTxt=document.getElementById('overlayTxt');
+  const msgs=['席順を決めています...','シャッフル中...','テーブルを並べています...','もう少しです...'];
+  let mi=0;
+  overlay.classList.add('show');
+  overlayTxt.textContent=msgs[mi];
+  const msgTimer=setInterval(()=>{ mi=(mi+1)%msgs.length; overlayTxt.textContent=msgs[mi]; },500);
+
+  setTimeout(()=>{
+    clearInterval(msgTimer);
+    overlay.classList.remove('show');
+
+    let tables=buildTables();
+    if(mode==='basic')        tables=shuffleBasic(people,tables);
+    else if(mode==='farewell')tables=shuffleFarewell(people,tables);
+    else                      tables=shuffleWelcome(people,tables);
+
+    tables.forEach(t=>{ while(t.seats.length<t.capacity) t.seats.push(null); });
+    renderResult(tables,people.length);
+  }, 1600);
+}
+
+function buildTables(){
+  const ts=[];
+  tableConfigs.forEach(tc=>{
+    for(let c=0;c<tc.count;c++){
+      const sh=shape==='both'?(ts.length%2===0?'rect':'round'):shape;
+      ts.push({id:ts.length,seats:[],capacity:tc.seats,shape:sh,label:`テーブル${ts.length+1}`});
+    }
+  });
+  return ts;
+}
+
+function shuffleBasic(people,tables){
+  const sorted=shuffleArr([...people]).sort((a,b)=>ROLE_WEIGHT[b.role]-ROLE_WEIGHT[a.role]);
+  const n=tables.length;
+  sorted.forEach((p,i)=>{
+    for(let k=0;k<n;k++){ const t=tables[(i+k)%n]; if(t.seats.length<t.capacity){t.seats.push(p);break;} }
+  });
+  return tables;
+}
+
+function shuffleFarewell(people,tables){
+  const stars=shuffleArr(people.filter(p=>p.pos==='star'));
+  const rest=shuffleArr(people.filter(p=>p.pos!=='star').sort((a,b)=>ROLE_WEIGHT[b.role]-ROLE_WEIGHT[a.role]));
+  const n=tables.length;
+  if(farewellOpt==='spread'){
+    stars.forEach((s,i)=>{ const t=tables[i%n]; if(t.seats.length<t.capacity) t.seats.push(s); });
+  } else {
+    stars.forEach(s=>{ for(let k=0;k<n;k++){ if(tables[k].seats.length<tables[k].capacity){tables[k].seats.push(s);break;} } });
+  }
+  rest.forEach((p,i)=>{ for(let k=0;k<n;k++){ const t=tables[(i+k)%n]; if(t.seats.length<t.capacity){t.seats.push(p);break;} } });
+  return tables;
+}
+
+function shuffleWelcome(people,tables){
+  const newbies=shuffleArr(people.filter(p=>p.pos==='new'));
+  const mentors=shuffleArr([...people.filter(p=>p.pos!=='new')].sort((a,b)=>ROLE_WEIGHT[b.role]-ROLE_WEIGHT[a.role]));
+  const n=tables.length;
+  newbies.forEach((nb,i)=>{ const t=tables[i%n]; if(t.seats.length<t.capacity) t.seats.push(nb); });
+  const used=new Set();
+  tables.forEach(t=>{
+    if(!t.seats.some(s=>s&&s.pos==='new')) return;
+    for(let m of mentors){ if(!used.has(m.id)&&t.seats.length<t.capacity){t.seats.push(m);used.add(m.id);break;} }
+  });
+  const remaining=shuffleArr(people.filter(p=>!tables.some(t=>t.seats.some(s=>s&&s.id===p.id))));
+  remaining.forEach(p=>{ for(let k=0;k<n;k++){ if(tables[k].seats.length<tables[k].capacity){tables[k].seats.push(p);break;} } });
+  return tables;
+}
+
+// ===================== CONFETTI =====================
+function launchConfetti(){
+  const colors=['#534AB7','#f59e0b','#10b981','#ef4444','#8b5cf6','#ec4899','#3b82f6','#f97316'];
+  const shapes=['rect','circle','triangle'];
+  for(let i=0;i<90;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    const color=colors[Math.floor(Math.random()*colors.length)];
+    const shape=shapes[Math.floor(Math.random()*shapes.length)];
+    const size=6+Math.random()*8;
+    el.style.left=Math.random()*100+'vw';
+    el.style.width=size+'px'; el.style.height=size+'px';
+    el.style.background=color;
+    if(shape==='circle') el.style.borderRadius='50%';
+    else if(shape==='triangle'){ el.style.background='transparent'; el.style.borderLeft=size/2+'px solid transparent'; el.style.borderRight=size/2+'px solid transparent'; el.style.borderBottom=size+'px solid '+color; el.style.width='0'; el.style.height='0'; }
+    const dur=1.8+Math.random()*2;
+    const delay=Math.random()*0.8;
+    el.style.animation=`confettiFall ${dur}s ${delay}s ease-in forwards`;
+    el.style.transform=`rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),(dur+delay+0.2)*1000);
+  }
+}
+
+// ===================== RENDER RESULT =====================
+const FILLS  =['#EEEDFE','#E1F5EE','#FAECE7','#E6F1FB','#FAEEDA','#FBEAF0','#EAF3DE','#FCEBEB'];
+const STROKES=['#534AB7','#0F6E56','#993C1D','#185FA5','#854F0B','#993556','#3B6D11','#A32D2D'];
+
+function roleBadgeHTML(role,pos){
+  if(pos==='star') return `<span class="role-badge" style="background:#fef0e8;color:#b04510">⭐主役</span>`;
+  if(pos==='new')  return `<span class="role-badge" style="background:#edf9f3;color:#1a6e40">🌱新入</span>`;
+  const map={director:['部長','#7b1fa2','#f3e5f5'],roomchief:['室長','#ad1457','#fce4ec'],manager:['課長','#1565c0','#e3f2fd'],chief:['係長','#00695c','#e0f2f1']};
+  if(!map[role]) return '';
+  const [l,c,bg]=map[role];
+  return `<span class="role-badge" style="background:${bg};color:${c}">${l}</span>`;
+}
+
+function renderResult(tables,validCount){
+  _lastTables = tables;
+  const tagMap={basic:['🎲 親睦会','mode-tag-basic'],farewell:['🎁 送別会','mode-tag-farewell'],welcome:['🌱 歓迎会','mode-tag-welcome']};
+  const modeLabels={basic:'席順が決まりました！',farewell:'送別会の席順が決まりました！',welcome:'歓迎会の席順が決まりました！'};
+  document.getElementById('modeTagEl').innerHTML=`<span class="mode-tag ${tagMap[mode][1]}">${tagMap[mode][0]}</span>`;
+  document.getElementById('resultMeta').textContent=`${validCount}名 / ${tables.length}テーブル`;
+
+  // バースト演出
+  const burst=document.getElementById('resultBurst');
+  const burstTxt=document.getElementById('resultBurstTxt');
+  burst.style.display='block';
+  burstTxt.textContent=modeLabels[mode];
+
+  const blocks=document.getElementById('tableBlocks'); blocks.innerHTML='';
+  tables.forEach((t,ti)=>{
+    const block=document.createElement('div');
+    block.className='table-block anim-pop';
+    block.style.animationDelay=(ti*0.08)+'s';
+    const bh=document.createElement('div'); bh.className='table-block-header';
+    bh.innerHTML=`<span class="table-block-title">${t.label}（${t.capacity}人掛け）</span><span class="table-block-sub">${t.shape==='round'?'丸テーブル':'長方形テーブル'}</span>`;
+    const sg=document.createElement('div'); sg.className='seats-grid';
+    t.seats.forEach((p,si)=>{
+      const chip=document.createElement('div'); chip.className='seat-chip';
+      chip.style.animationDelay=(ti*0.08+si*0.03)+'s';
+      chip.innerHTML=p
+        ?`<div class="seat-num">${si+1}</div><div class="seat-name">${esc(p.name)}</div>${roleBadgeHTML(p.role,p.pos)}`
+        :`<div class="seat-num">${si+1}</div><div class="seat-name" style="color:var(--text3)">（空席）</div>`;
+      sg.appendChild(chip);
+    });
+    block.append(bh,sg); blocks.appendChild(block);
+  });
+  buildLayoutSVG(tables);
+
+  const sec=document.getElementById('resultSection'); sec.style.display='block';
+  sec.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  // コンフェッティ発射
+  setTimeout(launchConfetti, 200);
+}
+
+// ===================== SVG =====================
+function buildLayoutSVG(tables){
+  const svg=document.getElementById('layoutSvg');
+  const n=tables.length;
+  const cols=n<=2?n:n<=4?2:Math.ceil(Math.sqrt(n));
+  const rows=Math.ceil(n/cols);
+  const cellW=580/cols, cellH=230;
+  svg.setAttribute('viewBox',`0 0 ${cols*cellW+40} ${rows*cellH+40}`);
+  svg.innerHTML='';
+  tables.forEach((t,i)=>{
+    const col=i%cols,row=Math.floor(i/cols);
+    const cx=20+col*cellW+cellW/2, cy=20+row*cellH+cellH/2;
+    const fill=FILLS[i%FILLS.length], stroke=STROKES[i%STROKES.length];
+    t.shape==='round'?drawRound(svg,t,cx,cy,fill,stroke):drawRect(svg,t,cx,cy,fill,stroke,cellW-30,cellH-30);
+  });
+}
+function svgEl(tag,attrs){ const e=document.createElementNS('http://www.w3.org/2000/svg',tag); Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v)); return e; }
+function svgTxt(parent,x,y,t,opts={}){ const e=svgEl('text',{x,y,'text-anchor':opts.a||'middle','dominant-baseline':'central','font-size':opts.sz||11,'font-weight':opts.w||400,fill:opts.fill||'#1c1b18','font-family':"'Hiragino Sans',sans-serif"}); e.textContent=t; parent.appendChild(e); }
+function seatLabel(p){ return p?p.name+(p.pos==='star'?' ⭐':p.pos==='new'?' 🌱':ROLE_WEIGHT[p.role]>=3?' ◆':''):'空席'; }
+
+function drawRound(svg,t,cx,cy,fill,stroke){
+  const n=t.capacity,r=Math.min(50,16+n*5),lr=r+30;
+  svg.appendChild(svgEl('circle',{cx,cy,r,fill,stroke,'stroke-width':1.5}));
+  svgTxt(svg,cx,cy-7,t.label,{sz:11,w:700,fill:stroke});
+  svgTxt(svg,cx,cy+8,`${n}人掛け`,{sz:9,fill:stroke});
+  t.seats.forEach((p,si)=>{
+    const ang=(si/n)*2*Math.PI-Math.PI/2;
+    const sx=cx+Math.cos(ang)*lr, sy=cy+Math.sin(ang)*lr;
+    svg.appendChild(svgEl('circle',{cx:sx,cy:sy,r:13,fill,stroke,'stroke-width':0.8,'stroke-opacity':0.6}));
+    svgTxt(svg,sx,sy,si+1,{sz:9,w:700,fill:stroke});
+    svg.appendChild(svgEl('line',{x1:cx+Math.cos(ang)*(r+1),y1:cy+Math.sin(ang)*(r+1),x2:sx-Math.cos(ang)*13,y2:sy-Math.sin(ang)*13,stroke,'stroke-width':0.5,'stroke-opacity':0.3}));
+    if(p){ const nx=sx+Math.cos(ang)*21,ny=sy+Math.sin(ang)*21; svgTxt(svg,nx,ny,seatLabel(p),{sz:8,a:Math.cos(ang)>0.3?'start':Math.cos(ang)<-0.3?'end':'middle',fill:'#1c1b18'}); }
+  });
+}
+function drawRect(svg,t,cx,cy,fill,stroke,cw,ch){
+  const n=t.capacity,tw=Math.min(cw-60,120),th=Math.min(ch-60,50),tx=cx-tw/2,ty=cy-th/2;
+  svg.appendChild(svgEl('rect',{x:tx,y:ty,width:tw,height:th,rx:8,fill,stroke,'stroke-width':1.5}));
+  svgTxt(svg,cx,cy-7,t.label,{sz:11,w:700,fill:stroke});
+  svgTxt(svg,cx,cy+7,`${n}人掛け`,{sz:9,fill:stroke});
+  const top=Math.ceil(n/2),bot=Math.floor(n/2);
+  for(let k=0;k<top;k++){
+    const p=t.seats[k],px=tx+tw*(k+1)/(top+1),py=ty-22;
+    svg.appendChild(svgEl('circle',{cx:px,cy:py,r:12,fill,stroke,'stroke-width':0.8,'stroke-opacity':0.6}));
+    svgTxt(svg,px,py,k+1,{sz:9,w:700,fill:stroke});
+    if(p) svgTxt(svg,px,py-17,seatLabel(p),{sz:8,fill:'#1c1b18'});
+  }
+  for(let k=0;k<bot;k++){
+    const p=t.seats[top+k],px=tx+tw*(k+1)/(bot+1),py=ty+th+22;
+    svg.appendChild(svgEl('circle',{cx:px,cy:py,r:12,fill,stroke,'stroke-width':0.8,'stroke-opacity':0.6}));
+    svgTxt(svg,px,py,top+k+1,{sz:9,w:700,fill:stroke});
+    if(p) svgTxt(svg,px,py+17,seatLabel(p),{sz:8,fill:'#1c1b18'});
+  }
+}
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ===================== メール送信 =====================
+let _lastTables = [];
+
+function buildSeatText(tables) {
+  return tables.map(t => {
+    const seats = t.seats.map((p,i) => p ? `  ${i+1}番席: ${p.name}` : null).filter(Boolean).join('\n');
+    return `【${t.label}】\n${seats}`;
+  }).join('\n\n');
+}
+
+function buildPersonMailBody(person, seatNo, tableLabel, allTables) {
+  const subject = encodeURIComponent('【飲み会】席順のご案内');
+  const body = encodeURIComponent(
+`${person.name} さん
+
+今回の飲み会の席順をお知らせします。
+
+━━━━━━━━━━━━━━━━
+あなたの席: ${tableLabel} ${seatNo}番席
+━━━━━━━━━━━━━━━━
+
+【全員の席順】
+${buildSeatText(allTables)}
+
+楽しい飲み会にしましょう！🍻`
+  );
+  return `mailto:${encodeURIComponent(person.email||'')}?subject=${subject}&body=${body}`;
+}
+
+function buildBccMailBody(people, allTables) {
+  const bcc = people.filter(p=>p.email).map(p=>encodeURIComponent(p.email)).join(',');
+  const subject = encodeURIComponent('【飲み会】席順のご案内');
+  const body = encodeURIComponent(
+`皆さん
+
+今回の飲み会の席順をお知らせします。
+
+【全員の席順】
+${buildSeatText(allTables)}
+
+楽しい飲み会にしましょう！🍻`
+  );
+  return `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+}
+
+function openMailModal() {
+  if(!_lastTables.length){ alert('先にシャッフルしてください'); return; }
+  document.getElementById('mailModalBackdrop').style.display='flex';
+  buildMailList();
+}
+function closeMailModal(e) {
+  if(!e || e.target===document.getElementById('mailModalBackdrop'))
+    document.getElementById('mailModalBackdrop').style.display='none';
+}
+
+function buildMailList() {
+  const list = document.getElementById('mailList');
+  list.innerHTML = '';
+  let total = 0, withEmail = 0;
+
+  _lastTables.forEach(t => {
+    t.seats.forEach((p, si) => {
+      if(!p) return;
+      total++;
+      const hasEmail = !!(p.email && p.email.trim());
+      if(hasEmail) withEmail++;
+      const seatNo = si + 1;
+      const row = document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:10px';
+
+      const info = document.createElement('div'); info.style.flex='1';
+      info.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <span style="font-size:13px;font-weight:600">${esc(p.name)}</span>
+          ${roleBadgeHTML(p.role,p.pos)}
+          <span style="font-size:11px;color:var(--text3)">${t.label} · ${seatNo}番席</span>
+        </div>
+        <div style="font-size:11px;color:${hasEmail?'var(--text2)':'var(--text3)'}">
+          ${hasEmail ? esc(p.email) : '⚠ メールアドレス未登録'}
+        </div>`;
+
+      const btn = document.createElement('a');
+      btn.className = 'icon-btn' + (hasEmail ? ' primary' : '');
+      btn.style.cssText='text-decoration:none;flex-shrink:0;font-size:11px';
+      if(hasEmail){
+        btn.href = buildPersonMailBody(p, seatNo, t.label, _lastTables);
+        btn.textContent = '個別送信';
+      } else {
+        btn.style.opacity='0.4';
+        btn.style.pointerEvents='none';
+        btn.textContent = '送信不可';
+      }
+
+      row.append(info, btn);
+      list.appendChild(row);
+    });
+  });
+
+  document.getElementById('mailListCount').textContent =
+    `${total}名中 ${withEmail}名 メールアドレス登録済み`;
+}
+
+function sendAllMail() {
+  const people = _lastTables.flatMap(t =>
+    t.seats.filter(p=>p&&p.email&&p.email.trim())
+  );
+  if(!people.length){ alert('メールアドレスが登録されていません。\nメンバー管理タブから追加してください。'); return; }
+  const href = buildBccMailBody(people, _lastTables);
+  window.location.href = href;
+}
+
+function copyAllText() {
+  const lines = [];
+  lines.push('【飲み会 席順結果】\n');
+  _lastTables.forEach(t => {
+    lines.push(`◆ ${t.label}`);
+    t.seats.forEach((p,i)=>{ if(p) lines.push(`  ${i+1}番席: ${p.name}`); });
+    lines.push('');
+  });
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text)
+    .then(()=>alert('全員分の席順をコピーしました！\nSlackやLINEに貼り付けてください。'))
+    .catch(()=>prompt('コピーしてください：', text));
+}
+
+function downloadEmbeddedHtml() {
+  if(!masterList.length){ alert('メンバーが登録されていません。'); return; }
+
+  // 現在のHTMLを取得してメンバーデータを埋め込む
+  const src = document.documentElement.outerHTML;
+
+  // サンプルデータ初期化ブロックを現在のmasterListで置き換え
+  const memberJson = JSON.stringify(masterList);
+  const tableJson  = JSON.stringify({tableConfigs, shape});
+
+  // loadMaster内のサンプル生成コードを、埋め込みデータ読み込みに差し替え
+  const embedded = src
+    // localStorage読み込み部分の前に埋め込みデータを注入するマーカーを使う
+    .replace(
+      "const STORAGE_MASTER = 'nomikai_master_v1';",
+      `const STORAGE_MASTER = 'nomikai_master_v1';
+const EMBEDDED_MASTER = ${memberJson};
+const EMBEDDED_TABLES = ${tableJson};`
+    )
+    .replace(
+      // loadMaster内のlocalStorage読み込み＋サンプル生成を埋め込みデータ優先に
+      `function loadMaster() {
+  try {
+    const d = localStorage.getItem(STORAGE_MASTER);
+    if(d) masterList = JSON.parse(d);
+  } catch(e){}
+  if(!masterList.length) {`,
+      `function loadMaster() {
+  try {
+    const d = localStorage.getItem(STORAGE_MASTER);
+    if(d) masterList = JSON.parse(d);
+  } catch(e){}
+  if(!masterList.length) {
+    masterList = EMBEDDED_MASTER.map(m=>({...m}));
+    saveMaster();
+    return;
+  }
+  if(false) {`
+    )
+    .replace(
+      `function loadTables() {
+  try {
+    const d = localStorage.getItem(STORAGE_TABLES);
+    if(d){ const p=JSON.parse(d); tableConfigs=p.tableConfigs||tableConfigs; shape=p.shape||shape; }
+  } catch(e){}
+}`,
+      `function loadTables() {
+  try {
+    const d = localStorage.getItem(STORAGE_TABLES);
+    if(d){ const p=JSON.parse(d); tableConfigs=p.tableConfigs||tableConfigs; shape=p.shape||shape; return; }
+  } catch(e){}
+  tableConfigs = EMBEDDED_TABLES.tableConfigs || tableConfigs;
+  shape = EMBEDDED_TABLES.shape || shape;
+}`
+    );
+
+  const blob = new Blob([embedded], {type:'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const date = new Date().toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'}).replace('/','');
+  a.download = `飲み会シャッフル_${date}.html`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+
+  alert('ダウンロードしました！\n\nOutlookでこのファイルを添付して自分宛に送信してください。\nスマホのOutlookで添付を開き「ファイルに保存」→ブラウザで開けば使えます。');
+}
+
+
+loadMaster();
+loadTables();
+renderTableConfigs();
+renderAttendChips();
+renderDropdown();
+setMode('basic');
+setShape(shape);
+updateInfo();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</body>
+</html>
